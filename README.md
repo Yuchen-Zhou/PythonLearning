@@ -47,5 +47,5 @@ PyCharm 下载地址 : https://www.jetbrains.com/pycharm/download/
 PyCharm 安装地址：http://www.runoob.com/w3cnote/pycharm-windows-install.html  
 Professional（专业版，收费）：完整的功能，可试用 30 天。  
 Community（社区版，免费）：阉割版的专业版。  
-PS:当然你也可以白嫖Google Colab(一般在学习Machine Learning时使用)
+PS:当然你也可以白嫖[Google Colab](https://colab.research.google.com/)(一般在学习Machine Learning时使用)
 
