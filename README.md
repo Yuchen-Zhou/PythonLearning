@@ -49,3 +49,8 @@ Professional（专业版，收费）：完整的功能，可试用 30 天。
 Community（社区版，免费）：阉割版的专业版。  
 PS:当然你也可以白嫖[Google Colab](https://colab.research.google.com/)(一般在学习Machine Learning时使用)
 
+## 关于机器学习
+得益于现在的互联网，现在有很多机器学习的视频，在这里我们就汇总一些非常出名的（或者是我觉得挺不错的）
+
+- AI for everyone
+- Coursera 吴恩达的 MachineLearning
