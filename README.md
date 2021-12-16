@@ -52,5 +52,9 @@ PS:当然你也可以白嫖[Google Colab](https://colab.research.google.com/)(�
 ## 关于机器学习
 得益于现在的互联网，现在有很多机器学习的视频，在这里我们就汇总一些非常出名的（或者是我觉得挺不错的）
 
-- AI for everyone
-- Coursera 吴恩达的 MachineLearning
+- [Coursera](https://www.coursera.org/)
+    - [AI for everyone](https://www.coursera.org/learn/ai-for-everyone)
+    - Coursera 吴恩达的 [MachineLearning](https://www.coursera.org/learn/machine-learning)和[DeepLearning](https://www.coursera.org/specializations/deep-learning)
+    - 当然这几个视频在B站也有搬运可以参考下面这个[机器学习](bilibili.com/video/BV164411b7dx?spm_id_from=333.999.0.0)、[深度学习](https://www.bilibili.com/video/BV1FT4y1E74V?spm_id_from=333.999.0.0)
+- [李沐](https://www.zhihu.com/people/mli65)（取自知乎）大神的[实用机器学习](https://c.d2l.ai/stanford-cs329p/)([B站中文版视频](https://space.bilibili.com/1567748478/channel/collectiondetail?sid=28144))、[动手学深度学习](https://zh-v2.d2l.ai/)([B站PyTorch版](https://space.bilibili.com/1567748478/channel/seriesdetail?sid=358497))
+
