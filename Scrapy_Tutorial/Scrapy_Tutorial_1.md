@@ -1,4 +1,4 @@
-### 1.1简介
+# 1.1简介
 通常我们在用requests时，实现爬虫相关的所有操作，例如爬取逻辑、异常处理、数据存储、数据解析等，但其实这些步骤很多都是重复的。既然如此，我们将这些步骤的逻辑抽离出来，把其中的通用功能做成一个个基础组件。Scrapy框架几乎是Python爬虫学习和工作过程中必须掌握的框架，需要好好钻研和掌握。
 
 参考文档：
@@ -6,7 +6,7 @@
 - 文档:https://docs.scrapy.org/
 - GitHub:https://github.com/scrapy/scrapy
 
-### 1.2架构
+# 1.2架构
 <img src='../pics/scrapy-1.png' width='80%'>
 
 - Engine：引擎，图最中间的部分，用来处理整个系统的数据流和事件，是整个框架的核心，可以理解为整个框架的中央处理器，负责数据的流转和逻辑的处理。
@@ -18,7 +18,7 @@
 - Download Middlewares：下载器中间件，图中Engine和Downloader之间的Hook框架，负责实现Downloader和Engine之间的请求和响应的处理过程。
 - Spider Middlewares：蜘蛛中间件，图中Engine和Spiders之间的方块部分，他是位于Engine和Spiders之间的Hook框架，负责实现Spiders和Engine之间的Item，请求和响应的处理过程。
 
-### 1.3数据流
+# 1.3数据流
 了解了Scrapy的基本组件和功能后，通过图和描述我们可以知道，在整个爬虫的过程中，Engine负责了整个数据流的分配和处理，数据流主要包括Item、Request、Response这三大部分。接下来我们看看数据流是怎么被Engine控制的
 
 (1)启动爬虫项目时，Engine根据要爬取的目标站点找到处理该站点的Spider，Spider会生成最初需要爬取的页面对应的一个或多个Request，然后发送给Engine。  
@@ -32,7 +32,7 @@
 
 重复(2)到(8)到操作，知道Scheduler中没有更多的Request，这时候Engine会关闭Spider，整个爬取过程结束
 
-### 1.4项目结构
+# 1.4项目结构
 在开始之前，得先安装Scrapy，可以使用下面这行代码  
 `pip install scrapy`
 不过，Scrapy框架往往需要很多依赖库，如果依赖库没有安装好的话，容易安装失败。安装成功后，我们就可以使用Scrapy命令行了，在命令行中输入`scrapy`就可以看到
@@ -45,7 +45,13 @@ Scrapy可以通过命令行来创建一个爬虫项目，比如我们要创建�
 现在项目结构如下：
 <img src='../pics/scrapy-3.png' width='80%'>  
 
-各个文件的功能描述如下:
+各个主要文件的功能描述如下:
 - scrapy.cfg：Scrapy项目的配置文件，其中定义了项目的配置文件路径、部署信息等。
 - items.py：定义了Item数据结构，所有Item的定义都可以放在这里。
-- pipelines.py：
+- pipelines.py：定义了Item Pipelin的实现，所有的Item Pipeline的实现都可以放在这里。
+- settings.py：定义了项目的全局配置。
+- middlewares.py：定义了Spider Middlewares和Downloader Middlewares的实现。
+- spiders：里面包含了一个个Spider的实现、每个Spider都对应了一个Python文件
+
+# 1.5总结
+本节介绍了Scrapy框架的基本架构、数据流过程以及项目结构
