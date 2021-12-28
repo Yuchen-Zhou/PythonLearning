@@ -5,3 +5,6 @@ Scrapy是一个基于Python开发的爬虫框架，该框架提供了非常多�
 本节介绍了Scrapy框架的基本架构、数据流过程以及项目结构
 
 ## 2.[Scrapy入门](./Scrapy_Tutorial_2.md)
+通过Scrapy官方推荐的教程，完成了第一个Scrapy爬虫，输出并写入了MongoDB数据库
+
+## 3.[Selector的使用](./Scrapy_Tutorial_3.md)

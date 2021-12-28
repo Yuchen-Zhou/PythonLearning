@@ -269,4 +269,7 @@ MONGODB_CONNECT_STRING='localhost'
 MONGODB_DATABASE = 'scrapytutorial'
 ```
 这里我们申明了ITEM_PIPELINES字典，键名时Pipeline的类名，键值时调用优先级，是一个数字，数字越小则优先级更高，另外我们申明了MongoDB的连接字符串和存储的数据库名称。
-然后再重新爬取，使用`scrapy crawl quotes`
+然后再重新爬取，使用`scrapy crawl quotes`.爬取结束后，我们可以在MongoDB中看到已经创建好的scrapytutorial数据库和QuoteItem的表，如下图所示。
+<img src='../pics/scrapy-8.png' width='80%'>
+
+长的text已经被处理并追加了省略号，短的text保持不变，author和tags也都保存到了数据库中。

@@ -10,12 +10,12 @@ class TextPipeline(object):
         if item['text']:
             if len(item['text']) > self.limit:
                 item['text'] = item['text'][0:self.limit].rstrip()+'...'
-                return item
+            return item
 
-            else:
-                return DropItem('Missing text')
+        else:
+            return DropItem('Missing text')
 
-class MonogoDBPipeline(object):
+class MongoDBPipeline(object):
     def __init__(self, connection_string, database):
         self.connection_string = connection_string
         self.database = database
@@ -23,7 +23,7 @@ class MonogoDBPipeline(object):
     @classmethod
     def from_crawler(cls, crawler):
         return cls(
-            connection_string = crawler.settings.get('MONGODB_CONNECTION_STRING'),
+            connection_string = crawler.settings.get('MONGODB_CONNECT_STRING'),
             database=crawler.settings.get('MONGODB_DATABASE')
         )
     
