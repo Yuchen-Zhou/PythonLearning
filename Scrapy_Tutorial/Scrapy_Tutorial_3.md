@@ -20,7 +20,7 @@ Hello World
 
 # 3.2Scrapy Shell
 由于Selector主要是与Scrapy结合使用，如Scrapy的回调函数中的参数response直接调用xpath或者css方法来提取数据，所以在这里我们借助Scrapy Shell来模拟Scrapy请求的过程。  
-我们用官方文档中的一个样例页面来做演示：https://doc.scrapy.org/en/latest/_static/selector-sample1.html.  
+我们用官方文档中的一个样例页面来做演示：https://doc.scrapy.org/en/latest/_static/selectors-sample1.html.  
 `scrapy shell https://doc.scrapy.org/en/latest/_static/selectors-sample1.html`
 
 进入Scrapy Shell模式，可以看到。
