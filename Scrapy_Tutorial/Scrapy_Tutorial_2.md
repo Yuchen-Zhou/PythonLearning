@@ -197,5 +197,76 @@ class QuotesSpider(scrapy.Spider):
 
 # 2.11使用Item Pipeline
 如果想要进行复杂的输出，可以使用Item Pipeline。
-Item Pipeline为项目管道。当Item生成后，他会自动被
+Item Pipeline为项目管道。当Item生成后，他会自动被Item Pipeline处进行处理，我们可以用Item Pipeline来做如下操作：
+- 清洗HTML数据
+- 验证爬取数据，检查爬取字段
+- 查重并丢弃重复内容
+- 将爬取结果存储到数据库
 
+要实现Item Pipeline很简单，只需要定义一个类并且实现process_item方法即可。启用Item Pipeline后，Item Pipeline会自动调用这个方法。process_item方法必须返回包含数据的字典或Item对象，或者抛出DropItem异常。  
+process_item方法有两个参数。一个参数是item，每次Spider生成的Item都会作为参数传递过来。另一个参数是spider，就是Spider的实例。接下来我们实现一个Item Pipeline筛掉text长度大于50的Item，并将结果保存到MongoDB。
+
+修改项目里的pipelines.py文件，之前用命令行生成的文件内容可以删掉，增加一个TextPipeline类，内容如下：
+```python
+from scrapy.exceptions import DropItem
+
+class TextPipeline(object):
+    def __init__(self):
+        self.limit = 50
+
+    def process_item(self, item, spider):
+        if item['text']:
+            if len(item['text']) > self.limit:
+                item['text'] = item['text'][0:self.limit].rstrip()+'...'
+                return item
+
+            else:
+                return DropItem('Missing text')
+```
+
+这段代码在构造方法里定义了限制长度为50，实现了`process_item`方法，其参数是item和spider。首先该放啊判断item的text属性是否存在，如果不存在，则抛出DropItem异常。如果存在，再判断长度是否大于50，如果大于，那就截断然后拼接省略号，再将item返回。  
+接下来，我们将处理后的item存入MongoDB，定义另外一个Pipeline。同样在pipelines.py中，我们实现另一个类MongoPipeline，内容如下：
+```python
+class MonogoDBPipeline(object):
+    def __init__(self, connection_string, database):
+        self.connection_string = connection_string
+        self.database = database
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(
+            connection_string = crawler.settings.get('MONGODB_CONNECTION_STRING'),
+            database=crawler.settings.get('MONGODB_DATABASE')
+        )
+    
+    def open_spider(self, spider):
+        self.client = pymongo.MongoClient(self.connection_string)
+        self.db = self.client[self.database]
+
+    def process_item(self, item, spider):
+        name = item.__class__.__name__
+        self.db[name].insert(dict(item))
+        return item
+
+    def close_spider(self, spider):
+        self.client.close()
+```
+MongoPipeline类实现了另外几个API定义方法：
+- from_crawler:一个类方法，用`@classmethod`标识，这个方法是以依赖注入的方式实现的，方法的参数就是crawler。通过crawler，我们能拿到全局配置的每个配置信息，在全局配置settinfs.py中，可以通过定义MONGO_URI和MONGO_DB来指定MongoDB连接需要的地址和数据库名称，拿到配置系信息之后返回类对象即可。所以这个方法的定义主要是用来获取settings.py中的配置的
+
+- open_spider:当Spider被开启时，这个方法被调用，主要进行了一些初始化操作
+- close_spider:当Spider被关闭时，这个方法被调用，将数据库连接关闭
+
+最主要的`process_item`方法则执行了数据插入操作，这里直接调用insert方法传入item对象即可将数据存储到MongoDB。  
+定义好的TextPipeline和MongoDBPipeline这两个类后，我们需要在`settings.py`中使用它们。
+
+```python
+ITEM_PIPELINES = {
+   'scrapytutorial.pipelines.TextPipeline': 300,
+   'scrapytutorial.pipelines.MongoDBPipeline': 400,
+}
+MONGODB_CONNECT_STRING='localhost'
+MONGODB_DATABASE = 'scrapytutorial'
+```
+这里我们申明了ITEM_PIPELINES字典，键名时Pipeline的类名，键值时调用优先级，是一个数字，数字越小则优先级更高，另外我们申明了MongoDB的连接字符串和存储的数据库名称。
+然后再重新爬取，使用`scrapy crawl quotes`

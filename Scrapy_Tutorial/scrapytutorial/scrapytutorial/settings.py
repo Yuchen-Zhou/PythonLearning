@@ -62,9 +62,14 @@ ROBOTSTXT_OBEY = True
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'scrapytutorial.pipelines.ScrapytutorialPipeline': 300,
-#}
+ITEM_PIPELINES = {
+   'scrapytutorial.pipelines.TextPipeline': 300,
+   'scrapytutorial.pipelines.MongoDBPipeline': 400,
+}
+MONGODB_CONNECT_STRING='localhost'
+MONGODB_DATABASE = 'scrapytutorial'
+
+
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
