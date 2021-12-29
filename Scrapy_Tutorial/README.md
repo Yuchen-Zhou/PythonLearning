@@ -11,5 +11,5 @@ Scrapy是一个基于Python开发的爬虫框架，该框架提供了非常多�
 Selector是基于parcel库构建的，依赖于lxml，支持XPath选择器、CSS选择器以及正则表达式，功能全面，解析速度和准确度非常高
 
 
-## 4.[Spider的使用](./Scrapy_tutorial_4.md)
+## 4.[Spider的使用](./Scrapy_Tutorial_4.md)
 在Scrapy中，网站的链接配置、抓取逻辑、解析逻辑其实都是在Spider中配置的。
