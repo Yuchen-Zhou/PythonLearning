@@ -66,5 +66,21 @@ process_start_requests方法必须返回另一个包含Request对象的可迭代
 
 进入httpbin.py修改Spider
 ```python
+from scrapy import Request, Spider
 
+class HttpbinSpider(scrapy.Spider):
+    name = 'httpbin'
+    allowed_domains = ['www.httpbin.org']
+    start_url = 'http://www.httpbin.org/get'
+
+    def start_requests(self, response):
+        for i in range(5):
+            url = f'{self.start_url}?query={i}'
+            yield Request(url, callback=self.parse)
+
+    def parse(self, response):
+        print(response.text)
 ```
+运行代码`scrapy crawl httpbin`
+
+<img src='../pics/scrapy-14.png' width='80%'>
