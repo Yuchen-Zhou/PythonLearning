@@ -20,3 +20,12 @@ Downloader Middleware即下载中间件。它是处于Scrapy的Engine和Download
 也就是说，Downloader Middleware在整个架构中起作用的位置是以下两个：
 - Engine从Scheduler获取Request发送给Downloader，在Request被Engine发送给Downloader执行下载之前，Downloader Middleware可以对Request进行修改
 - Downloader执行Request后生成Response，在Response被Engine发送给Spider之前，也就是在Response被Spider解析之前，Downloader Middleware可以对Response进行修改
+
+
+## 6.[Spider Middleware的使用](./Scrapy_Tutorial_5.md)
+Spider Middleware是处于Spider和Engine之间的处理模块。当Downloader生成Response之后，Response会被发送给Spider，在发送给Spider之前，Response会首先经过Spider Middleware的处理，当Spider处理生成Item和Request之后，Item和Request还会经过Spider Middleware的处理。
+
+Spider Middleware有如下3个作用
+- Downloader生成Response后，Engine会将其发送给Spider进行解析，在Response发送给Spider之前，可以借助Spider Middleware对Response进行处理
+- Spider生成Request之后会被发送至Engine，然后Request会被转发到Scheduler，在Request被发送给Engine之前，可以借助Spider Middleware对Request进行处理。
+- Spider生成Item之后会被发送至Engine，然后Item会被转发到Item Pipeline，在Item被发送Engine之前，可以借助Spider Middleware对Item进行处理
