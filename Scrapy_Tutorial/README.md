@@ -11,5 +11,12 @@ Scrapy是一个基于Python开发的爬虫框架，该框架提供了非常多�
 Selector是基于parcel库构建的，依赖于lxml，支持XPath选择器、CSS选择器以及正则表达式，功能全面，解析速度和准确度非常高
 
 
-## 4.[Spider的使用](./Scrapy_tutorial_4.md)
+## 4.[Spider的使用](./Scrapy_Tutorial_4.md)
 在Scrapy中，网站的链接配置、抓取逻辑、解析逻辑其实都是在Spider中配置的。
+
+## 5.[Downloader Middleware的使用](./Scrapy_Tutorial_5.md)
+Downloader Middleware即下载中间件。它是处于Scrapy的Engine和Downloader之间的处理模块。在Engine把从Scheduler获取的Request发送给Downloader的过程中，以及Downloader把Response发送回Engine的过程中，Request和Response都会经过Downloader Middleware的处理。
+
+也就是说，Downloader Middleware在整个架构中起作用的位置是以下两个：
+- Engine从Scheduler获取Request发送给Downloader，在Request被Engine发送给Downloader执行下载之前，Downloader Middleware可以对Request进行修改
+- Downloader执行Request后生成Response，在Response被Engine发送给Spider之前，也就是在Response被Spider解析之前，Downloader Middleware可以对Response进行修改
