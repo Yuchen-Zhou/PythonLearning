@@ -63,3 +63,8 @@ process_start_requests方法必须返回另一个包含Request对象的可迭代
 `scrapy startproject scrapyspidermiddlewaredemo`
 然后新建一个Spider  
 `scrapy genspider httpbin www.httpbin.org`
+
+进入httpbin.py修改Spider
+```python
+
+```
