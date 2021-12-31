@@ -6,7 +6,7 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-
+import os
 BOT_NAME = 'scrapyitempipelinedemo'
 
 SPIDER_MODULES = ['scrapyitempipelinedemo.spiders']
@@ -25,7 +25,7 @@ ROBOTSTXT_OBEY = True
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 2
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
@@ -62,9 +62,15 @@ ROBOTSTXT_OBEY = True
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'scrapyitempipelinedemo.pipelines.ScrapyitempipelinedemoPipeline': 300,
-#}
+# ITEM_PIPELINES = {
+#    'scrapyitempipelinedemo.pipelines.MongoDBPipeline': 300,
+# }
+MONGODB_CONNECTION_STRING = 'mongodb://localhost:27017'
+MONGODB_DATABASE = 'movies'
+MONGODB_COLLECTION = 'movies'
+
+ELASTICSEARCH_CONNECTION_STRING = os.getenv('ELASTICSEARCH_CONNECTION_STRING')
+ELASTICSEARCH_INDEX = 'movies'
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
