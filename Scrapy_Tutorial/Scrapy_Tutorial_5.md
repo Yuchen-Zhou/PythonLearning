@@ -150,4 +150,85 @@ def process_spider_input(self, response, spider):
 ```python
 print('Status:', response.status)
 ```
+重新运行Spider，结果如下
 
+<img src='../pics/scrapy-17.png' width='80%'>
+
+在Scrapy中，还有几个内置的Spider Middleware
+- **HttpErrorMiddleware**  
+HttpErrorMiddleware的主要作用是过滤我们需要忽略的Response，比如状态码为200-299就直接返回，50以上的就不会处理
+
+    ```python
+    def __init__(self, settings):
+        self.handle_httpstatus_all = settings.getbool('HTTPERROR_ALLOW_ALL')
+        self.handle_httpstatus_list = settings.getlist('HTTPERROR_ALLOWED_CODES')
+
+    def process_spider_input(self, response, spider):
+        if 200 <= response.status < 300:
+            return
+        meta = response.meta
+        if 'handle_httpstatus_all' in meta:
+            return 
+        if 'handle_httpstatus_list' in meta:
+            allowed_status = meta['handle_httpstatus_list']
+        elif self.handle_httpstatus_all:
+            return
+        else:
+            allowed_statuses = getattr(spider, 'handle_httpstatus_list', self.handle_httpstatus_list)
+        if response.status in allowed_statuses:
+            return 
+        raise HttpError(response, 'Ignoring non-200 response')
+    ```
+可以看到它实现了process_spider_input方法，然后判断了状态码200～299就直接返回，否则会根据handle_httpstatus_all和handle_httpstatus_list来进行处理。例如状态码在handle_httpstatus_list定义的范围内，就会直接处理，否则抛出HttpError异常。这也解释了为什么刚才我们把Response的状态码修改为201却依然能被正常处理的原因，如果我们修改为非200～299的状态码，就会抛出异常了
+
+另外，如果想要针对一些错误类型的状态码进行处理，可以修改Spider的handle_httpstatus_list属性，也可以修改Request meta的handle_httpstatus_list属性，还可以修改全局settings HTTPERROR_ALLOWED_CODES。  
+比如我们想要处理404状态码，可以进行如下配置：
+`HTTPERROR_ALLOWED_CODES = [404]`
+
+- **OffsiteMiddleware**  
+OffsiteMiddleware的主要作用是过滤不符合allowded_domains的Request，Spider里面定义的allowed_domains其实就是在这个Spider Middleware里生效的。其核心代码实现如下：
+```python
+def process_spider_output(self, response, result, spider):
+    for x in result:
+        if isinstance(x, Request):
+            if x.dont_filter or self.should_follow(x, spider):
+                yield x
+            else:
+                domain = urlparse_cached(x).hostname
+                if domain and domain not in self.domains_seen:
+                    self.domains_seen.add(domain)
+                    logger.debug(
+                        "Filtered offsite request to %(domain)r : %(request)s",
+                        {'domain': domain, 'request': x}, extra={'spider': spider})
+                    self.stats.inc_value('offsite/domains', spider=spider)
+                self.stats.inc_value('offsite/filtered', spider=spider)
+        else:
+            yield x
+```
+
+可以看到，这里首先遍历了result，然后判断了Request类型的元素赋值为x。然后根据x的dont_filter、url和Spider的allowed_domains进行了过滤，如果不符合allowed_domains，就直接输出日志并不再返回Request，只有符合要求的Request才会被返回并继续调用
+
+- **UrlLengthMiddleware**  
+UrlLengthMiddleware的主要作用是根据Request的URL长度对Request进行过滤，如果URL的长度过长，此Request就会被忽略。
+
+    ```python
+    @classmethod 
+    def from_settings(cls, settings):
+        maxlength = settings.getint('URLLENGTH_LIMIT')
+    
+    def process_spider_output(self, response, result, spider):
+        def _filter(request):
+            if isinstance(request, Request) and len(request.url) > self.maxlength:
+                logger.debug("Ignoring link (url length > %(maxlength)d: %(url)s) ", extra={'spider': spider})
+                return False
+            else:
+                return True
+
+            return (r for r in result or () if _filter(r))
+    ```
+
+可以看到，这里利用了process_spider_output对result里面的Request进行过滤，如果是Request类型并且URL长度超过了最大限制，就会被过滤。我们可以从中了解到，如果想要根据URL的长度进行过滤，可以设置URLLENGTH_LIMIT   
+比如我们只想爬取URL长度小于50的页面，那么就可以进行如下配置：  
+`URLLENGTH_LIMIT = 50`
+
+可见Spider Middleware能够非常灵活地对Spider的输入和输出进行处理，内置的一些Spider Middleware在某些场景下也发挥了重要作用。

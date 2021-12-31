@@ -29,3 +29,13 @@ Spider Middleware有如下3个作用
 - Downloader生成Response后，Engine会将其发送给Spider进行解析，在Response发送给Spider之前，可以借助Spider Middleware对Response进行处理
 - Spider生成Request之后会被发送至Engine，然后Request会被转发到Scheduler，在Request被发送给Engine之前，可以借助Spider Middleware对Request进行处理。
 - Spider生成Item之后会被发送至Engine，然后Item会被转发到Item Pipeline，在Item被发送Engine之前，可以借助Spider Middleware对Item进行处理
+
+## 7.[Item Pipeline](./Scrapy_Tutorial_6.md)
+Item Pipeline即项目管道，他的调用发生在Spider产生Item之后。当Spider解析完Response，Item就会被Engine传递到Item Pipeline，被定义的Item Pipeline组件会顺次被调用，完成一连串的处理过程，比如清洗数据、存储等。
+
+Item Pipeline的主要功能如下：
+- 清洗HTML数据
+- 验证爬取结果，检查爬取字段
+- 查重并丢弃重复内容
+- 将爬取结果存储到数据库中
+
