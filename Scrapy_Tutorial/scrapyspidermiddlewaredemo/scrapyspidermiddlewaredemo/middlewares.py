@@ -8,6 +8,8 @@ from scrapy import signals
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
 
+from Scrapy_Tutorial.scrapyspidermiddlewaredemo.scrapyspidermiddlewaredemo.items import DemoItem
+
 
 class ScrapyspidermiddlewaredemoSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -101,3 +103,22 @@ class ScrapyspidermiddlewaredemoDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+
+
+class CustomizeMiddleware(object):
+    def process_start_requests(self, start_requests, spider):
+        for request in start_requests:
+            url = request.url
+            url += '&name=germey'
+            request = request.replace(url=url)
+            yield request
+
+    def process_spider_input(self, response, spider):
+        response.status = 201
+    
+    def process_spider_output(self, response, result, spider):
+        for i in result:
+            if isinstance(i, DemoItem):
+                i['origin'] = None
+                yield i

@@ -1,5 +1,5 @@
 from scrapy import Request, Spider
-
+from scrapyspidermiddlewaredemo.items import DemoItem
 
 class HttpbinSpider(Spider):
     name = 'httpbin'
@@ -12,4 +12,6 @@ class HttpbinSpider(Spider):
             yield Request(url, callback=self.parse)
 
     def parse(self, response):
-        print(response.text)
+        item = DemoItem(**response.json())
+        print('Status:', response.status)
+        yield item
