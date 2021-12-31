@@ -84,3 +84,70 @@ class HttpbinSpider(scrapy.Spider):
 运行代码`scrapy crawl httpbin`
 
 <img src='../pics/scrapy-14.png' width='80%'>
+
+这里我们可以看到几个Request对应的Response的内容被输出了，每个返回结果带有args参数，query为0-4 
+另外我们可以定义一个Item，4个字段就是目标站点返回的字段，相关代码:
+```python
+import scrapy
+
+class DemoItem(scrapy.Item):
+    origin = scrapy.Field()
+    headers = scrapy.Field()
+    args = scrapy.Field()
+    url = scrapy.Field()
+```
+可以在parse方法中将返回的Response的内容转化为DemoItem，将parse方法做如下修改：
+```python
+def parse(self, response):
+        item = DemoItem(**response.json())
+        yield item
+```
+
+重新运行，最终Spider就会产生对应的DemoItem了，运行效果如下：
+
+<img src='../pics/scrapy-15.png' width='80%'>
+
+可以看到原本Response的JSON数据就被转化为了DemoItem并返回。  
+接下来在middlewares.py中重新声明一个CustomizeMiddleware类，内容如下：
+```python
+class CustomizeMiddleware(object):
+    def process_start_requests(self, start_requests, spider):
+        for request in start_requests:
+            url = request.url
+            url += '&name=germey'
+            request = request.replace(url=url)
+            yield request
+```
+
+这里实现了`process_start_requests`方法，它可以对start_requests表示的每个Request进行处理，我们首先获取了每个Request的URL，然后在URL的后面又拼接上了另一个Query参数，name等于germey，然后我们利用request的replace方法将url属性替换，这样就成功为Request赋值了新的URL。
+
+接着我们需要将此CustomizeMiddleware开启，在settings.py中进行如下的定义：
+```
+SPIDER_MIDDLEWARES = {
+    'scrapyspidermiddlewaredemo.middlewares.CustomizeMiddleware' : 543,
+}
+```
+这样我们就开启了CustomizeMiddleware这Spider Middleware。  
+重新运行Spider，这时候我们可以看到输出结果就变成了下面这样
+<img src='../pics/scrapy-16.png' width='80%'>
+
+可以观察到url属性成功添加了`name=germey`的内容，这说明我们利用Spider Middleware成功改写Request。  
+除了改写start_requests，我们还可以对Response和Item进行改写，比如对Response进行改写，我们可以尝试更改其状态码，在CustomizeMiddleware里面增加如下定义：
+```python
+def process_spider_input(self, response, spider):
+        response.status = 201
+    
+    def process_spider_output(self, response, result, spider):
+        for i in result:
+            if isinstance(i, DemoItem):
+                i['origin'] = None
+                yield i
+```
+
+这里定义了process_spider_input和process_spider_output方法，分别来处理Spider的输入和输出。对于process_spider_input方法来说，输入自然就是Response对象，所以第一个参数就是response，我们在这里直接修改了状态码。对于process_spider_output方法来说，输出就是Response或Item了，但是这里二者是混合在一起的，作为result参数传递过来。result是一个可迭代对象，我们遍历了result，然后判断了每个元素的类型，在这里使用isinstance方法进行判定：如果i是DemoItem类型，就把它的origin属性设置为空。当然这里还可以针对Request类型做类似的处理。
+
+另外在parse方法里添加Response的状态码的输出结果
+```python
+print('Status:', response.status)
+```
+
