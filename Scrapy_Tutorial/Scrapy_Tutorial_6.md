@@ -304,3 +304,5 @@ Scrapy提供了专门处理下载的Pipeline，包括文件下载和图片下载
     在这里我们实现了ImagePipeline，继承Scrapy内置的ImagePipeline，重写下面几个方法。
 
     - get_media_requests：第一个参数item是爬取生成的Item对象，我们需要下载的图片链接    
+    - file_path：第一个参数request就是当前下载对应的Response对象。这个方法用来保存的文件名，在这里我们获取了刚才生成的Request的meta信息，包括movie（电影名称）、type（电影类型）和name（导演或演员姓名），最终三者拼合为file_name作为最终的图片路径
+    - item_compeleted：单个Item完成下载时的处理方法，因为并不是每张访问
