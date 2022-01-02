@@ -34,8 +34,6 @@ close_spider方法是在一个类方法，用@classmethod标识，它接收一�
 - Scrapy:https://setup.scrape.center/scrapy
 - MongoDB:https://setup.scrape.center/mongodb
 - PyMongo:https://setup.scrape.center/pymongo
-- Elasticsearch:https://setup.scrape.center/elasticsearch
-- Elasticsearch Python包:https://setup.scrape.center/elasticsearch-py
 
 # 7.3实战
 首先新建一个项目，我们取名为scrapyitempipelinedemo,命令如下  
@@ -204,51 +202,6 @@ def parse_detail(self, response):
     `MONGODB_CONNECTION_STRING = 'mongodb://localhost:27017' # or just use 'localhost'`
     这样，一个保存到MongoDB的Pipeline就创建好了，利用process_item方法我们即可完成数据插入到MongoDB的操作，最后会返回Item对象
 
-- Elasticsearch  
-存储到Elasticsearch也是一样，我们需要先创建一个Pipeline，代码如下
-```python
-from elasticsearch import Elasticsearch
-
-class ElasticsearchPipeline(object):
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        cls.connection_string = crawler.settings.get('ELASTICSEARCH_CONNECTION_STRING')
-        cls.index = crawler.settings.get('ELASTICSEARCH_INDEX')
-        return cls()
-
-    def open_spider(self, spider):
-        self.conn = Elasticsearch([self.connection_string])
-        if not self.conn.indices.exists(self.index):
-            self.conn.indices.exists(self.index)
-
-    def process_item(self, item, spider):
-        self.conn.index(index=self.index, body=dict(item), id=hash(item['name']))
-        return item
-
-    def close_spider(self, spider):
-        self.conn.transport.close()
-```
-
-这里同样定义了ELASTICSEARCH_CONNECTION_STRING代表Elasricsearch的连接字符串，ELASTICSEARCH_INDEX代表索引名称，具体初始化的操作和MongoDBPipeline的原理是类似的
-
-在process_item方法中，我们调用了index方法对数据进行索引，我们指定了3个参数，第一个参数index代表索引名称，第二个参数body代表数据对象，在这里我们将Item转为了字典类型，第三个参数id则是索引数据的id，这里我们直接使用电影名称的hash值作为id，或者自行指定其他id也可以的。
-
-同样地，我们需要在settins.py里面添加ELASTICSEARCH_CONNECTION_STRING和ELASTICSEARCH_INDEX：
-```python
-ELASTICSEARCH_CONNECTION_STRING = os.getenv('ELASTICSEARCH_CONNECTION_STRING')
-ELASTICSEARCH_INDEX = 'movies'
-```
-这里的ELASTICSEARCH_CONNECTION_STRING同样是从环境变量中读取的，他的格式如下：
-`http[s]://[username:password@]host[:port]`
-
-比如我实际使用的ELASTICSEARCH_CONNECTION_STRING值就类似：  
-`https://user:password@...:9200`
-
-这里可以连接你的，这样ElasticsearchPipeline就完成了
-
-
-
 
 - Image Pipeline  
 Scrapy提供了专门处理下载的Pipeline，包括文件下载和图片下载。下载文件和图片的原理与抓取页面的原理一样，因此下载过程支持异步和多线程，十分高效,[参考链接](https://docs.scrapy.org/en/latest/topics/media-pipeline.html)
@@ -318,4 +271,12 @@ ITEM_PIPELINES = {
 
 这里要注意调用的顺序。我们需要优先调用ImagePipeline对Item做下载后的筛选，下载失败的Item就直接忽略，它们不会保存到MongoDB和MySQL里。随后再调用其他两个存储的Pipeline，这样就能确保存入数据库的图片都是下载成功的。
 运行程序  
-`scrapy crawl images`
+`scrapy crawl images`  
+
+查看MongoDB  
+<img src='../pics/scrapy-22.png' width='80%'>
+
+查看本地images文件夹，发现图片都已经成功下载
+
+<img src='../pics/scrapy-23.png' width='80%'>
+
