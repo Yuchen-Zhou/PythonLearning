@@ -1,308 +1,234 @@
-# 7.1核心方法
-我们可以自定义Item Pipeline，只需要实现指定的方法就好，其中必须实现的一个方法是：
-- process_item(item, spider)
+# 6.1使用说明
+同样需要说明的是，Scrapy其实已经提供了许多Spider Middleware，与Downloader Middleware类似，它们被SPIDER_MIDDLEWARES_BASE变量所定义。
 
-另外还有几个比较实用的方法，它们分别是：
-- open_spider(spider)
-- close_spider(spider)
-- from_crawler(cls, crawler)
+SPIDER_MIDDLEWARES_BASE变量的内容如下：
+```python
+{
+    'scrapy.spidermiddlewares.httperror.HttpErrorMiddleware': 50,
+    'scrapy.spidermiddlewares.offset.OffsetMiddleware': 500,
+    'scrapy.spidermiddlewares.referer.RefererMiddleware': 700,
+    'scrapy.spidermiddlewares.urllength.UrlLengthMiddleware': 800,
+    'scrapy.spidermiddlewares.depth.DepthMiddleware': 900,
+}
+```
+SPIDER_MIDDLEWARES_BASE里面定义的Spider Middleware是默认生效的，如果我们要自定义SPider Middleware，可以和Downloader Middleware一样，创建Spider Middleware并将其加入SPIDER_MIDDLEWARES。直接修改这个变量就可以添加自己定义的Spider Middleware。以及禁用SPIDER_MIDDLEWARES_BASE里面定义的Spider Middleware
 
-下面我们对这几个方法的用法进行详细介绍：
-- process_item(item, spider)  
-process_item是必须实现的方法，被定义的Item Pipeline会默认调用这个方法对Item进行处理，比如进行数据处理或将数据写入数据库等操作。process_item方法必须返回Item类型的值或者抛出一个DropItem异常
+# 6.2核心方法
+Scrapy内置的Spider Middleware为Scrapy提供了基础的功能。如果我们想要扩展其功能，只需要实现几个方法。
+每个Spider Middleware都定义了以下一个或多个方法的类，核心方法有如下4个。
+- process_spider_input(response, spider)
+- process_spider_output(response, result, spider)
+- process_spider_exception(response, exception, spider)
+- process_start_request(start_requests, spider)
 
-    process_item方法的参数有两个
-    - item：Item对象，即被处理的Item
-    - spider：Spider对象，即生成该Item的Spider
+只需要实现其中一个方法就可以定义一个Spider Middleware。下面我们看看这4个方法的详细用法。
 
-    该方法的返回类型如下
-    - 如果返回的是Item对象，那么此Item会接着被低优先级的Item Pipeline的process_item方法处理，直到所有的方法被调用完毕
-    - 如果抛出DropItem异常，那么此Item就会被抛弃，不再进行处理
+- process_spider_input(response, spider)  
+当Response通过Spider Middleware时，process_spider_input方法被调用，处理该Response。他有两个参数
+    - response：Response对象，即被处理的Response
+    - spider：Spider对象，即该Response对应的Spider对象
 
-- open_spider(spider)  
-open_spider方法是在Spider开启的时候被自动调用的，在这里我们可以做一些初始化工作，如开启数据库连接等。其中参数spider就是被关闭的Spider对象
+process_spider_input应该返回None或者抛出异常。
+    - 如果它返回None，Scrapy会继续处理该Response，调用所有其他的Spider Middleware直到Spider处理该Response  
+    - 如果它抛出一个异常，Scrapy不会调用任何其他Spider Middleware的process_spider_input方法，并调用Request的errback方法。errback的输出将会以另一个方向重新输入中间件，使用process_spider_output方法来处理，当其抛出异常时则调用process_spider_exception来处理
 
-- close_spider(spider)  
-close_spider方法是在一个类方法，用@classmethod标识，它接收一个参数crawler。通过crawler对象，我们可以拿到Scrapy的所有核心组件，如全局配置的每个信息。然后可以在这个方法里面创建一个Pipeline实例。参数cls就是Class，最后返回一个Class实例。
 
-# 7.2目标
-我们要爬取的目标网站是https://ssr1.scrape.center/，我们需要把每部电影的名称、类别、评分、简介、导演、演员的信息以及相关图片爬取下来，同时把每部电影的导演、演员的相关图片保存成一个文件夹，并将每步电影的完整数据保存到MongoDB和Elasticsearch里
+- process_spider_output(response, result, spider)  
+当Spider处理Response返回结果时，process_spider_output方法被调用。他有3个参数
+    - response：Response对象，即生成该输出的Response
+    - result：包含Request或Item对象的可迭代对象，即Spider返回的结果
+    - spider：Spider对象，即结果对应的Spider对象
 
-这里使用Scrapy来实现这个电影数据爬虫，主要是为了了解Item Pipeline的用法。我们会使用Item Pipeline分别实现MongoDB存储、Elasticsearch存储、Image图片存储这三个Pipeline。
+process_spider_output必须返回包含Request或Item对象的可迭代对象
 
-在开始前，请确保安装好MongoDB和Elasticsearch，另外安装好Python和PyMongo、Elasticsearch、Scrapy，参考如下：
-- Scrapy:https://setup.scrape.center/scrapy
-- MongoDB:https://setup.scrape.center/mongodb
-- PyMongo:https://setup.scrape.center/pymongo
-- Elasticsearch:https://setup.scrape.center/elasticsearch
-- Elasticsearch Python包:https://setup.scrape.center/elasticsearch-py
+- process_spider_exception(response, exception, spider)  
+当Spider或Spider Middleware的process_spider_input方法抛出异常时，process_spider_exception方法被调用。它有3个参数。
+    - response：Response对象，被抛出的异常
+    - exception：Exception对象，被抛出的异常
+    - spider：Spider对象，即抛出该异常的Spider对象
 
-# 7.3实战
-首先新建一个项目，我们取名为scrapyitempipelinedemo,命令如下  
-`scrapy startproject scrapyitempipelinedemo`  
-接下来，我们创建一个Spider，命令如下  
-`scrapy genspider scrape ssr1.scrape.center`  
-这样我们就成功创建了一个Spider，名字为scrape，允许爬取的域名为`ssr1.scrape.center`。实现start_requests方法的代码如下：
+process_spider_exception必须返回None或者一个（包含Response或Item对象的）可迭代对象。
+    - 如果它返回None，那么Scrapy将继续处理该异常，调用其他Spider Middleware中的process_spider_exception方法，直到所有Spider Middleware都被调用。
+    - 如果它返回一个可迭代对象，则其他Spider Middleware的process_spider_output方法被调用，其他的process_spider_exception不会被调用
+
+- process_start_request(start_requests, spider)  
+process_start_requests方法以Spider启动的Request为参数被调用，执行的过程类似于process_spider_output，只不过它没有相关联的Response并且必须返回Request。
+    - start_requests：包含Request的可迭代对象，即StartRequests。
+    - spider：Spider对象，即Start Requests所属的Spider
+
+process_start_requests方法必须返回另一个包含Request对象的可迭代对象
+
+# 6.3实战
+首先我们新建一个Scrapy项目叫做scrapyspidermiddlewaredemo  
+`scrapy startproject scrapyspidermiddlewaredemo`
+然后新建一个Spider  
+`scrapy genspider httpbin www.httpbin.org`
+
+进入httpbin.py修改Spider
 ```python
 from scrapy import Request, Spider
 
-class ScrapeSpider(Spider):
-    name = 'scrape'
-    allowed_domains = ['ssr1.scrape.center']
-    start_url = 'http://ssr1.scrape.center/'
-    max_page = 10
+class HttpbinSpider(scrapy.Spider):
+    name = 'httpbin'
+    allowed_domains = ['www.httpbin.org']
+    start_url = 'http://www.httpbin.org/get'
 
-    def start_requests(self):
-        for i in range(1, self.max_page):
-            url = f'{self.base_url}/page/{i}'
-            yield Request(url, callback=self.parse_index)
+    def start_requests(self, response):
+        for i in range(5):
+            url = f'{self.start_url}?query={i}'
+            yield Request(url, callback=self.parse)
 
-    def parse_index(self, response):
-        print(response)
+    def parse(self, response):
+        print(response.text)
 ```
+运行代码`scrapy crawl httpbin`
 
-在这里我们声明了max_page即最大翻页数量，然后实现了start_requests方法，构造了10个初始请求分别爬取每个列表页，Request对应的回调方法修改为了parse_index，然后我们暂时在parse_index方法里面打印输出了response对象。
+<img src='../pics/scrapy-14.png' width='80%'>
 
-`scrapy crawl scrape`
-
-运行结果如下
-
-<img src='../pics/scrapy-18.png' width='80%'>
-
-可以看到队对应的列表页的数据就被爬取下来了，Response的状态码为200.
-接着我们可以在parse_index方法里面对response的内容进行解析，提取每部电影的详情页链接，通过审查源代码可以发现，其标题对应的CSS选择器为.item .name，如下图所示
-
-<img src='../pics/scrapy-19.png' width='80%'>
-
-所以这里我们可以借助response的css方法进行提取，提取链接之后生成详情页的Request。可以把parse_index方法改写如下：
-```python
-def parse_index(self, response):
-        for item in response.css('.item'):
-            href = item.css('.name::attr(href)').extract_first()
-            url = response.urljoin(href)
-            yield Request(url, callback=self.parse_detail)
-
-    def parse_detail(self, response):
-        print(response)
-```
-
-在这里我们首先筛选出了每部电影对应的节点，即`.item`，然后遍历这些节点提取其中`.name`选择器对应的详情链接，接着通过response的urljoin方法拼接成完整的详情页URL，最后构造新的详情页Request，回调方法设置为parse_detail，同时在parse_detail方法里面打印输出response。
-
-重新运行，我们可以看到详情页的内容就被爬取下来了，如下图所示  
-<img src='../pics/scrapy-20.png' width='80%'>
-
-其实现在parse_detail里面的response就是详情页的内容了，我们可以进一步对详情页的内容进行解析，提取每部电影的名称、类别、评分、简介、导演、演员等信息。
-
-首先我们新建一个Item，叫做MovieItem
+这里我们可以看到几个Request对应的Response的内容被输出了，每个返回结果带有args参数，query为0-4 
+另外我们可以定义一个Item，4个字段就是目标站点返回的字段，相关代码:
 ```python
 import scrapy
 
-class MovieItem(scrapy.Item):
-    name = scrapy.Field()
-    categories = scrapy.Field()
-    score = scrapy.Field()
-    drama = scrapy.Field()
-    directors = scrapy.Field()
-    actors = scrapy.Field()
+class DemoItem(scrapy.Item):
+    origin = scrapy.Field()
+    headers = scrapy.Field()
+    args = scrapy.Field()
+    url = scrapy.Field()
 ```
-
-这里我们定义的几个字段name、categories、score、drama、directors、actors分别代表电影名称、类别、评分、简介、导演、演员。接下来我们就可以提取详情页了
-
+可以在parse方法中将返回的Response的内容转化为DemoItem，将parse方法做如下修改：
 ```python
-def parse_detail(self, response):
-        item = MovieItem()
-        item['name'] = response.xpath('//div[contains(@class, "item")]//h2/text()').extract_first()
-        item['categories'] = response.xpath('//button[contains(@class, "category")]/span/text()').extract()
-        item['score'] = response.css('.score::text').re_first('[\d\.]+')
-        item['drama'] = response.css('.drama p::text').extract_first().strip()       
-        item['directors'] = []
-        directors = response.xpath('//div[contains(@class, "directors")]//div[contains(@class, "director")]')
-        for director in directors:
-            director_image = director.xpath('.//img[@class="image"]/@src').extract_first()
-            director_name = director.xpath('.//p[contains(@class, "name")]/text()').extract_first()
-            item['directors'].append({
-                'name': director_name,
-                'iamge': director_image
-            })
-        item['actors'] = []
-        actors = response.css('.actors .actor')
-        for actor in actors:
-            actor_image = actor.css('.actor .image::attr(src)').extract_first()
-            actor_name = actor.css('.actor .name::text').extract_first()
-            item['actors'].append({
-                'name': actor_name,
-                'image': actor_image
-            })
-            yield item
+def parse(self, response):
+        item = DemoItem(**response.json())
+        yield item
 ```
 
-在这里我们首先创建了一个MovieItem对象，赋值为Item，然后我们使用xpath方法提取了name，categories两个字段。然后用css选择器提取了score和drama字段，同时score字段最后还调用了re_first方法传入正则表达式提取分数的内容。对于导演directors和演员actors，我们首先提取了单个director和actor节点，然后分别从中提取了姓名和照片，最后组成一个列表赋值给directors和actors字段
+重新运行，最终Spider就会产生对应的DemoItem了，运行效果如下：
 
-重新运行，结果如下
+<img src='../pics/scrapy-15.png' width='80%'>
 
-<img src='../pics/scrapy-21.png' width='80%'>
-
-可以看到这里我们已经成功提取了各个字段然后生成了MovieItem对象了
-
-- MongoDB  
-首先确保MongoDB已经安装并且正常运行，既可以运行在本地，也可以运行在远程，我们需要把它的连接字符串构造好，连接字符串的格式如下:
-`mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]`
-
-    比如运行在本地27017端口的无密码的MongoDB可以直接写为：  
-    `mongodb://localhost:27017`
-
-    如果是远程的MongoDB，可以是根据用户名、密码、地址、端口等构造。  
-    我们实现了一个MongoDBPipeline，将信息保存到MongoDB，在pipelines.py里添加如下类的实现：
-    ```python
-    import pymongo
-    from scrapyitempipelinedemo.items import MovieItem
-
-    class MongoDBPipeline(object):
-
-        @classmethod
-        def from_crawler(cls, crawler):
-            cls.connection_string = crawler.settings.get('MONGODB_CONNECTION_STRING')
-            cls.database = crawler.settings.get('MONGODB_DATABASE')
-            cls.collection = crawler.settings.get('MONGODB_COLLECTION')
-            return cls
-
-        def open_spider(self, spider):
-            self.client = pymongo.MongoClient(self.connection_string)
-            self.db = self.client[self.database]
-
-        def process_item(self, item, spider):
-            self.db[self.database].update_one({
-                'name': item['name']
-            }, {
-                '$set': dict(item)
-            }, True)
-            return item
-
-        def close_spider(self, spider):
-            self.client.close()
-    ```
-
-    这里我们首先利用了from_crawler获取里全局配置MONGODB_CONNECTTION_STRING、MONGODB_DATABASE和MONGODB_COLLECTION，即MongoDB连接字符串、数据库名称、集合名词，然后将三者赋值为类属性。
-
-    接着我们实现了open_spider方法，该方法就是利用from_crawler赋值的connection_string创建一个MongoDB连接对象，然后声明数据库操作对象，close_spider则是在Spider运行结束时关闭MongoDB连接。
-
-    接着最重要的就是process_item方法了，这个方法接收的参数item就是从Spider生成的item对象，该方法需要将此Item存储到MongoDB中。这里我们使用了update_one方法实现了存在即更新，不存在则插入到功能。
-
-    接下来我们需要在settings.py里添加MONGODB_CONNECTION_STRING、MONGODB_DATABASE和MONGODB_COLLECTION这3个变量，相关代码如下：
-    ```python
-    ITEM_PIPELINES = {
-    'scrapyitempipelinedemo.pipelines.MongoDBPipeline': 300,
-    }
-    MONGODB_CONNECTION_STRING = os.getenv('MONGODB_CONNECTION_STRING')
-    MONGODB_DATABASE = 'movies'
-    MONGODB_COLLECTION = 'movies'
-    ```
-
-    这里可以将MONGODB_CONNECTION_STRING设置为从环境变量中读取，而不用将明文密码等信息写到代码里
-
-    如果是本地无密码的MongoDB，直接写为如下内容就可  
-    `MONGODB_CONNECTION_STRING = 'mongodb://localhost:27017' # or just use 'localhost'`
-    这样，一个保存到MongoDB的Pipeline就创建好了，利用process_item方法我们即可完成数据插入到MongoDB的操作，最后会返回Item对象
-
-- Elasticsearch  
-存储到Elasticsearch也是一样，我们需要先创建一个Pipeline，代码如下
+可以看到原本Response的JSON数据就被转化为了DemoItem并返回。  
+接下来在middlewares.py中重新声明一个CustomizeMiddleware类，内容如下：
 ```python
-from elasticsearch import Elasticsearch
-
-class ElasticsearchPipeline(object):
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        cls.connection_string = crawler.settings.get('ELASTICSEARCH_CONNECTION_STRING')
-        cls.index = crawler.settings.get('ELASTICSEARCH_INDEX')
-        return cls()
-
-    def open_spider(self, spider):
-        self.conn = Elasticsearch([self.connection_string])
-        if not self.conn.indices.exists(self.index):
-            self.conn.indices.exists(self.index)
-
-    def process_item(self, item, spider):
-        self.conn.index(index=self.index, body=dict(item), id=hash(item['name']))
-        return item
-
-    def close_spider(self, spider):
-        self.conn.transport.close()
+class CustomizeMiddleware(object):
+    def process_start_requests(self, start_requests, spider):
+        for request in start_requests:
+            url = request.url
+            url += '&name=germey'
+            request = request.replace(url=url)
+            yield request
 ```
 
-这里同样定义了ELASTICSEARCH_CONNECTION_STRING代表Elasricsearch的连接字符串，ELASTICSEARCH_INDEX代表索引名称，具体初始化的操作和MongoDBPipeline的原理是类似的
+这里实现了`process_start_requests`方法，它可以对start_requests表示的每个Request进行处理，我们首先获取了每个Request的URL，然后在URL的后面又拼接上了另一个Query参数，name等于germey，然后我们利用request的replace方法将url属性替换，这样就成功为Request赋值了新的URL。
 
-在process_item方法中，我们调用了index方法对数据进行索引，我们指定了3个参数，第一个参数index代表索引名称，第二个参数body代表数据对象，在这里我们将Item转为了字典类型，第三个参数id则是索引数据的id，这里我们直接使用电影名称的hash值作为id，或者自行指定其他id也可以的。
+接着我们需要将此CustomizeMiddleware开启，在settings.py中进行如下的定义：
+```
+SPIDER_MIDDLEWARES = {
+    'scrapyspidermiddlewaredemo.middlewares.CustomizeMiddleware' : 543,
+}
+```
+这样我们就开启了CustomizeMiddleware这Spider Middleware。  
+重新运行Spider，这时候我们可以看到输出结果就变成了下面这样
+<img src='../pics/scrapy-16.png' width='80%'>
 
-同样地，我们需要在settins.py里面添加ELASTICSEARCH_CONNECTION_STRING和ELASTICSEARCH_INDEX：
+可以观察到url属性成功添加了`name=germey`的内容，这说明我们利用Spider Middleware成功改写Request。  
+除了改写start_requests，我们还可以对Response和Item进行改写，比如对Response进行改写，我们可以尝试更改其状态码，在CustomizeMiddleware里面增加如下定义：
 ```python
-ELASTICSEARCH_CONNECTION_STRING = os.getenv('ELASTICSEARCH_CONNECTION_STRING')
-ELASTICSEARCH_INDEX = 'movies'
-```
-这里的ELASTICSEARCH_CONNECTION_STRING同样是从环境变量中读取的，他的格式如下：
-`http[s]://[username:password@]host[:port]`
-
-比如我实际使用的ELASTICSEARCH_CONNECTION_STRING值就类似：  
-`https://user:password@...:9200`
-
-这里可以连接你的，这样ElasticsearchPipeline就完成了
-
-
-
-
-- Image Pipeline  
-Scrapy提供了专门处理下载的Pipeline，包括文件下载和图片下载。下载文件和图片的原理与抓取页面的原理一样，因此下载过程支持异步和多线程，十分高效,[参考链接](https://docs.scrapy.org/en/latest/topics/media-pipeline.html)
-
-    首先定义存储文件的路径，需要定义一个IMAGES_STORE变量，在settings.py中添加如下代码：  
-    `IMAGES_STORE = './images'`
-
-    在这里我们将路径定义为当前路径下的iamges子文件夹，即下载的图片都会保存到本项目的images文件夹中。  
-    内置的ImagesPipeline会默认读取Item的image_urls字段，并认为它是列表形式，接着遍历该字段后取出每个URL进行图片下载。   
-    但是现场生成的Item的图片链接字段并不是images_urls字段表示的，我们是想下载directors和actors的每张图片。所以为了实现下载，我们需要重新定义下载的部分逻辑，即自定义ImagePipeline继承内置的ImagesPipeline，重写几个方法。  
+def process_spider_input(self, response, spider):
+        response.status = 201
     
-    我们定义的ImagePipeline代码如下：
+    def process_spider_output(self, response, result, spider):
+        for i in result:
+            if isinstance(i, DemoItem):
+                i['origin'] = None
+                yield i
+```
+
+这里定义了process_spider_input和process_spider_output方法，分别来处理Spider的输入和输出。对于process_spider_input方法来说，输入自然就是Response对象，所以第一个参数就是response，我们在这里直接修改了状态码。对于process_spider_output方法来说，输出就是Response或Item了，但是这里二者是混合在一起的，作为result参数传递过来。result是一个可迭代对象，我们遍历了result，然后判断了每个元素的类型，在这里使用isinstance方法进行判定：如果i是DemoItem类型，就把它的origin属性设置为空。当然这里还可以针对Request类型做类似的处理。
+
+另外在parse方法里添加Response的状态码的输出结果
+```python
+print('Status:', response.status)
+```
+重新运行Spider，结果如下
+
+<img src='../pics/scrapy-17.png' width='80%'>
+
+在Scrapy中，还有几个内置的Spider Middleware
+- **HttpErrorMiddleware**  
+HttpErrorMiddleware的主要作用是过滤我们需要忽略的Response，比如状态码为200-299就直接返回，50以上的就不会处理
+
     ```python
-    from scrapy import Request
-    from scrapy.exceptions import DropItem
-    from scrapy.pipelines.images import ImagePipeline
+    def __init__(self, settings):
+        self.handle_httpstatus_all = settings.getbool('HTTPERROR_ALLOW_ALL')
+        self.handle_httpstatus_list = settings.getlist('HTTPERROR_ALLOWED_CODES')
+
+    def process_spider_input(self, response, spider):
+        if 200 <= response.status < 300:
+            return
+        meta = response.meta
+        if 'handle_httpstatus_all' in meta:
+            return 
+        if 'handle_httpstatus_list' in meta:
+            allowed_status = meta['handle_httpstatus_list']
+        elif self.handle_httpstatus_all:
+            return
+        else:
+            allowed_statuses = getattr(spider, 'handle_httpstatus_list', self.handle_httpstatus_list)
+        if response.status in allowed_statuses:
+            return 
+        raise HttpError(response, 'Ignoring non-200 response')
+    ```
+可以看到它实现了process_spider_input方法，然后判断了状态码200～299就直接返回，否则会根据handle_httpstatus_all和handle_httpstatus_list来进行处理。例如状态码在handle_httpstatus_list定义的范围内，就会直接处理，否则抛出HttpError异常。这也解释了为什么刚才我们把Response的状态码修改为201却依然能被正常处理的原因，如果我们修改为非200～299的状态码，就会抛出异常了
+
+另外，如果想要针对一些错误类型的状态码进行处理，可以修改Spider的handle_httpstatus_list属性，也可以修改Request meta的handle_httpstatus_list属性，还可以修改全局settings HTTPERROR_ALLOWED_CODES。  
+比如我们想要处理404状态码，可以进行如下配置：
+`HTTPERROR_ALLOWED_CODES = [404]`
+
+- **OffsiteMiddleware**  
+OffsiteMiddleware的主要作用是过滤不符合allowded_domains的Request，Spider里面定义的allowed_domains其实就是在这个Spider Middleware里生效的。其核心代码实现如下：
+```python
+def process_spider_output(self, response, result, spider):
+    for x in result:
+        if isinstance(x, Request):
+            if x.dont_filter or self.should_follow(x, spider):
+                yield x
+            else:
+                domain = urlparse_cached(x).hostname
+                if domain and domain not in self.domains_seen:
+                    self.domains_seen.add(domain)
+                    logger.debug(
+                        "Filtered offsite request to %(domain)r : %(request)s",
+                        {'domain': domain, 'request': x}, extra={'spider': spider})
+                    self.stats.inc_value('offsite/domains', spider=spider)
+                self.stats.inc_value('offsite/filtered', spider=spider)
+        else:
+            yield x
+```
+
+可以看到，这里首先遍历了result，然后判断了Request类型的元素赋值为x。然后根据x的dont_filter、url和Spider的allowed_domains进行了过滤，如果不符合allowed_domains，就直接输出日志并不再返回Request，只有符合要求的Request才会被返回并继续调用
+
+- **UrlLengthMiddleware**  
+UrlLengthMiddleware的主要作用是根据Request的URL长度对Request进行过滤，如果URL的长度过长，此Request就会被忽略。
+
+    ```python
+    @classmethod 
+    def from_settings(cls, settings):
+        maxlength = settings.getint('URLLENGTH_LIMIT')
     
-    class ImagePipeline(ImagePipeline):
+    def process_spider_output(self, response, result, spider):
+        def _filter(request):
+            if isinstance(request, Request) and len(request.url) > self.maxlength:
+                logger.debug("Ignoring link (url length > %(maxlength)d: %(url)s) ", extra={'spider': spider})
+                return False
+            else:
+                return True
 
-        def file_path(self, request, response=None, info=None):
-            movie = request.meta['movie']
-            type = request.meta['type']
-            name = request.meta['name']
-            file_name = f'{movie}/{type}/{name}.jpg'
-            return file_name
-
-        def item_completed(self, results, item, info):
-            image_paths = [x['path'] for ok, x in results if ok]
-            if not image_paths:
-                raise DropItem('Image Download Failed')
-
-        def get_media_requests(self, item, info):
-            for director in item['directors']:
-                director_name = director['name']
-                director_iamge = director['image']
-                yield Request(director_iamge, meta={
-                    'name': director_name,
-                    'type': director,
-                    'movie': item['name'],
-                })
-
-            for actor in item['actors']:
-                actor_name = actor['name']
-                actor_image = actor['image']
-                yield Request(actor_image, meta={
-                    'name': actor_name,
-                    'type': 'actor',
-                    'movie': item['name']
-                })
-
+            return (r for r in result or () if _filter(r))
     ```
 
-    在这里我们实现了ImagePipeline，继承Scrapy内置的ImagePipeline，重写下面几个方法。
+可以看到，这里利用了process_spider_output对result里面的Request进行过滤，如果是Request类型并且URL长度超过了最大限制，就会被过滤。我们可以从中了解到，如果想要根据URL的长度进行过滤，可以设置URLLENGTH_LIMIT   
+比如我们只想爬取URL长度小于50的页面，那么就可以进行如下配置：  
+`URLLENGTH_LIMIT = 50`
 
-    - get_media_requests：第一个参数item是爬取生成的Item对象，我们需要下载的图片链接    
-    - file_path：第一个参数request就是当前下载对应的Response对象。这个方法用来保存的文件名，在这里我们获取了刚才生成的Request的meta信息，包括movie（电影名称）、type（电影类型）和name（导演或演员姓名），最终三者拼合为file_name作为最终的图片路径
-    - item_compeleted：单个Item完成下载时的处理方法，因为并不是每张访问
+可见Spider Middleware能够非常灵活地对Spider的输入和输出进行处理，内置的一些Spider Middleware在某些场景下也发挥了重要作用。

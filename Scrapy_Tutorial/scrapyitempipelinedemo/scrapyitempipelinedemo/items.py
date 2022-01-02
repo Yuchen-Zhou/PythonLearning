@@ -1,10 +1,20 @@
-import scrapy
+# Define here the models for your scraped items
+#
+# See documentation in:
+# https://docs.scrapy.org/en/latest/topics/items.html
 
-class MovieItem(scrapy.Item):
-    name = scrapy.Field()
-    categories = scrapy.Field()
-    score = scrapy.Field()
-    drama = scrapy.Field()
-    directors = scrapy.Field()
-    actors = scrapy.Field()
+from scrapy import Item, Field
 
+
+#class ScrapyitempipelinedemoItem(scrapy.Item):
+    # define the fields for your item here like:
+    # name = scrapy.Field()
+ #   pass
+
+class MovieItem(Item):
+    name = Field()
+    categories = Field()
+    score = Field()
+    drama = Field()
+    directors = Field()
+    actors = Field()
