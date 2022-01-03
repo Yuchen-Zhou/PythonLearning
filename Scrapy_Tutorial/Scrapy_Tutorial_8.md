@@ -1,3 +1,3 @@
 # 8.1Extension介绍
 Scrapy提供了一些Extension机制，可以让我们添加和扩展一些自定义的功能。利用Extension我们可以注册一些Extension，如LogStats这个Extension用于记录一些基本的爬取信息，比如爬取的页面数量、提取的Item数量等，CoreStats这个Extension用于统计爬取过程中的核心统计信息，如开始爬取时间、爬取结束时间等。  
-和Downloader Middleware、Spider Middleware以及Item Pipeline一样，Extension也是通过
+和Downloader Middleware、Spider Middleware以及Item Pipeline一样，Extension也是通过  
