@@ -326,3 +326,16 @@ def index(request):
 {% endblock %}
 ```
 
+模版文件index.html的上下文value是字典对象，而value['name']用于获取字典的属性name，这种获取方式是Jinja2特有的模版语法，Django内置模版引擎是不支持的。
+运行MyDjango项目,分别访问127.0.0.1:8000和127.0.0.1:8000/admin,发现两者都能成功访问。网站首页是由Jinja2模版引擎解析的，而Admin后台系统是由Django内置模版引擎解析的，如下所示。
+
+<img src='./pics/57.png' width='80%'>
+
+<!-- 
+**2.模版语法**
+尽管Jinja2的设计思想来源于Django的模版引擎，但在细节和使用上，Jinja2比Django的模版引擎更加完善，而且Jinja2的模版语法在使用上与Django的模版引擎存在一定的差异。
+
+以上一节的MyDjango项目为例，在模版文件夹templates里创建新的模版文件`base.html`，该文件用于模版继承；然后在根目录下创建文件夹static，并在文件夹里放置favicon.ico图片，新建的文件夹static必须在settings.py中配置`STATICFILES_DIRS`，否则Django无法识别文件夹的静态资源；最后在分别在模版文件`base.html`和`index.html`中编写以下代码：
+```
+#
+``` -->
