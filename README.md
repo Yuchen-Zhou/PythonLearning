@@ -11,5 +11,5 @@
 - index.ipynb可索引到大部分笔记
 - [Scrapy教程](./Scrapy_Tutorial/README.md)
 - [人工智能](./ArtificialIntelligence/README.md)
-
+- [Django教程](./Django_Tutorial/README.md)
 
