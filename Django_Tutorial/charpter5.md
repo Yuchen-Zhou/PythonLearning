@@ -1,6 +1,6 @@
-## 第5章探究CBV视图
+# 第5章探究CBV视图
 
-### **5.1数据显示视图**
+## **5.1数据显示视图**
 
 ​	数据显示视图是将后台的数据展示在网页上，数据主要来自模型，一共定义了四个试图类分别是RedirectView、TemplateView、ListView和DetailView，说明如下：
 
@@ -12,7 +12,6 @@
 **1.重定向视图RedirectView**
 
 <img src="./pics/33.png">
-
 - permanet:根据属性值的真假来选择重定向方式，若为True，则状态码为302，否则状态码为301
 - url： 代表重定向的路由地址
 - pattern_name： 代表重定向的路由命名，如果已设置参数URL则无需设置该参数，否则提示异常信息
@@ -429,28 +428,6 @@ class index(FormView):
 
 <img src="./pics/46.png" width='50%' style='float:left'><img src="./pics/45.png" width='50%' style='float:right'>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 **2.新增视图CreateView**
 
 <img src="./pics/47.png">
@@ -556,24 +533,6 @@ class index(UpdateView):
 
 <img src="./pics/50.png" width='50%' style='float:left'><img src="./pics/51.png" width='50%' style='float:right'>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 **4.删除视图DeleteView**
 
 ​	<img src="./pics/52.png">
@@ -633,6 +592,4 @@ class index(DeleteView):
 ```
 
 <img src="./pics/53.png" width='50%' style='float:left'><img src="./pics/54.png" width='50%'>
-
-​	
 
