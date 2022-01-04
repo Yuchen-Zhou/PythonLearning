@@ -26,7 +26,7 @@ open_spider方法是在Spider开启的时候被自动调用的，在这里我们
 close_spider方法是在一个类方法，用@classmethod标识，它接收一个参数crawler。通过crawler对象，我们可以拿到Scrapy的所有核心组件，如全局配置的每个信息。然后可以在这个方法里面创建一个Pipeline实例。参数cls就是Class，最后返回一个Class实例。
 
 # 7.2目标
-我们要爬取的目标网站是https://ssr1.scrape.center/，我们需要把每部电影的名称、类别、评分、简介、导演、演员的信息以及相关图片爬取下来，同时把每部电影的导演、演员的相关图片保存成一个文件夹，并将每步电影的完整数据保存到MongoDB里
+我们要爬取的目标网站是https://ssr1.scrape.center/， 我们需要把每部电影的名称、类别、评分、简介、导演、演员的信息以及相关图片爬取下来，同时把每部电影的导演、演员的相关图片保存成一个文件夹，并将每步电影的完整数据保存到MongoDB里
 
 这里使用Scrapy来实现这个电影数据爬虫，主要是为了了解Item Pipeline的用法。我们会使用Item Pipeline分别实现MongoDB存储、Image图片存储这三个Pipeline。
 
