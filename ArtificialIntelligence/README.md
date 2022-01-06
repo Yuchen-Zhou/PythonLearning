@@ -6,7 +6,7 @@
 得益于现在的互联网，现在有很多机器学习的视频，在这里我们就汇总一些非常出名的（或者是我觉得挺不错的）
 
 - [Coursera](https://www.coursera.org/)  
-    - Coursera 吴恩达的 [MachineLearning](https://www.coursera.org/learn/machine-learning)和
+    - Coursera 吴恩达的 [MachineLearning](https://www.coursera.org/learn/machine-learning)
     - [B站搬运](bilibili.com/video/BV164411b7dx?spm_id_from=333.999.0.0)
 - [李沐](https://www.zhihu.com/people/mli65)（取自知乎）的[实用机器学习](https://c.d2l.ai/stanford-cs329p/)([B站中文版视频](https://space.bilibili.com/1567748478/channel/collectiondetail?sid=28144))、
 
